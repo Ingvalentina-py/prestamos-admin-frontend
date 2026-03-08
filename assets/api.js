@@ -1,4 +1,4 @@
-const API_BASE = "http://backend-loan-system.vercel.app/api";
+const API_BASE = "https://backend-loan-system.vercel.app/api";
 
 function getToken() {
   return localStorage.getItem("token");
