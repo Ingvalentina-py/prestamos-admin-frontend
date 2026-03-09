@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crear administrador</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body class="login-page">
+  <div class="login-card">
+    <h1>Sistema de Préstamos</h1>
+    <p>Crea tu cuenta de administrador para comenzar a gestionar clientes, cobradores y créditos.</p>
+
+    <form id="registerForm" class="login-form">
+      <input type="text" id="name" placeholder="Nombre completo" required />
+      <input type="email" id="email" placeholder="Correo electrónico" required />
+      <input type="text" id="phone" placeholder="Teléfono" />
+      <input type="password" id="password" placeholder="Contraseña" required />
+      <button type="submit" class="btn-primary">Crear administrador</button>
+    </form>
+
+    <div id="message" class="message"></div>
+
+    <div style="margin-top: 18px; text-align: center;">
+      <a href="login.html" class="small-link">Volver a iniciar sesión</a>
+    </div>
+  </div>
+
+  <script src="assets/api.js"></script>
+  <script>
+    const form = document.getElementById("registerForm");
+    const message = document.getElementById("message");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      message.textContent = "";
+
+      try {
+        await apiFetch("/auth/register-admin", {
+          method: "POST",
+          body: JSON.stringify({
+            name: document.getElementById("name").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            phone: document.getElementById("phone").value.trim(),
+            password: document.getElementById("password").value.trim()
+          })
+        });
+
+        message.textContent = "Administrador creado correctamente. Ahora puedes iniciar sesión.";
+        form.reset();
+      } catch (error) {
+        message.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>

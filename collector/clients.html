@@ -14,7 +14,10 @@
     requireRole("collector");
 
     async function loadPage() {
-      const data = await apiFetch("/clients");
+      const query = new URLSearchParams(window.location.search);
+      const q = query.get("q") || "";
+
+      const data = await apiFetch(`/clients${q ? `?q=${encodeURIComponent(q)}` : ""}`);
       const items = data.items || [];
 
       sidebarLayout({
@@ -46,6 +49,11 @@
               </div>
             </div>
 
+            <form id="searchForm" class="toolbar">
+              <input id="searchInput" placeholder="Buscar por nombre o cédula" value="${q}" />
+              <button class="btn-muted" type="submit">Buscar</button>
+            </form>
+
             <div class="table-wrap">
               <table>
                 <thead>
@@ -57,14 +65,18 @@
                   </tr>
                 </thead>
                 <tbody>
-                  ${items.map((client) => `
+                  ${items.length ? items.map((client) => `
                     <tr>
                       <td>${client.name}</td>
                       <td>${client.documentId}</td>
                       <td>${client.address || "-"}</td>
                       <td>${client.phone || "-"}</td>
                     </tr>
-                  `).join("")}
+                  `).join("") : `
+                    <tr>
+                      <td colspan="4">No se encontraron clientes.</td>
+                    </tr>
+                  `}
                 </tbody>
               </table>
             </div>
@@ -86,15 +98,22 @@
             })
           });
 
-          alert("Cliente registrado correctamente");
-          window.location.reload();
+          showToast("Cliente registrado correctamente", "success");
+          setTimeout(() => window.location.reload(), 700);
         } catch (error) {
-          alert(error.message);
+          showToast(error.message, "error");
         }
+      });
+
+      document.getElementById("searchForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const value = document.getElementById("searchInput").value.trim();
+        const url = value ? `clients.html?q=${encodeURIComponent(value)}` : "clients.html";
+        window.location.href = url;
       });
     }
 
-    loadPage().catch((err) => alert(err.message));
+    loadPage().catch((err) => showToast(err.message, "error"));
   </script>
 </body>
 </html>

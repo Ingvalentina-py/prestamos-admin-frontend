@@ -17,12 +17,15 @@
 
 * {
   box-sizing: border-box;
+  max-width: 100%;
 }
 
 html,
 body {
   margin: 0;
   padding: 0;
+  width: 100%;
+  overflow-x: hidden;
   font-family: Arial, Helvetica, sans-serif;
   background:
     radial-gradient(circle at top left, rgba(59, 130, 246, 0.18), transparent 30%),
@@ -167,6 +170,7 @@ input,
 select,
 textarea {
   width: 100%;
+  min-width: 0;
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid var(--border);
   color: var(--text);
@@ -210,13 +214,14 @@ button {
 }
 
 .table-wrap {
+  width: 100%;
   overflow-x: auto;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 760px;
+  min-width: 680px;
 }
 
 th,
@@ -309,6 +314,110 @@ th {
   color: var(--muted);
 }
 
+.small-link {
+  color: var(--primary-2);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.small-link:hover {
+  text-decoration: underline;
+}
+
+.chart-list {
+  display: grid;
+  gap: 14px;
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 60px;
+  gap: 12px;
+  align-items: center;
+}
+
+.chart-label {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.chart-bar {
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chart-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+}
+
+.chart-value {
+  text-align: right;
+  font-weight: bold;
+  color: var(--text);
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.toast-container {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 9999;
+  display: grid;
+  gap: 10px;
+}
+
+.toast {
+  min-width: 260px;
+  max-width: 360px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  color: white;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  animation: toastIn 0.25s ease;
+}
+
+.toast-success {
+  background: linear-gradient(135deg, rgba(34,197,94,0.92), rgba(22,163,74,0.92));
+}
+
+.toast-error {
+  background: linear-gradient(135deg, rgba(239,68,68,0.92), rgba(220,38,38,0.92));
+}
+
+.toast-info {
+  background: linear-gradient(135deg, rgba(59,130,246,0.92), rgba(37,99,235,0.92));
+}
+
+.toast-hide {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: all 0.3s ease;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 900px) {
   .page {
     grid-template-columns: 1fr;
@@ -317,6 +426,7 @@ th {
   .sidebar {
     position: relative;
     height: auto;
+    width: 100%;
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
@@ -328,5 +438,46 @@ th {
   .topbar {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .main {
+    padding: 14px;
+  }
+
+  .login-card {
+    padding: 22px;
+  }
+
+  .chart-row {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-value {
+    text-align: left;
+  }
+
+  table {
+    min-width: 620px;
+  }
+
+  .toast-container {
+    left: 14px;
+    right: 14px;
+    top: 14px;
+  }
+
+  .toast {
+    min-width: 100%;
+    max-width: 100%;
   }
 }

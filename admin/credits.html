@@ -14,9 +14,13 @@
     requireRole("admin");
 
     async function loadPage() {
+      const query = new URLSearchParams(window.location.search);
+      const q = query.get("q") || "";
+      const status = query.get("status") || "all";
+
       const [clientsData, creditsData, collectorsData] = await Promise.all([
         apiFetch("/clients"),
-        apiFetch("/credits"),
+        apiFetch(`/credits?status=${encodeURIComponent(status)}${q ? `&q=${encodeURIComponent(q)}` : ""}`),
         apiFetch("/users/collectors")
       ]);
 
@@ -66,6 +70,16 @@
               </div>
             </div>
 
+            <form id="filterForm" class="toolbar">
+              <input id="searchInput" placeholder="Buscar por cliente o cédula" value="${q}" />
+              <select id="statusFilter">
+                <option value="all" ${status === "all" ? "selected" : ""}>Todos</option>
+                <option value="pending" ${status === "pending" ? "selected" : ""}>Pendientes</option>
+                <option value="paid" ${status === "paid" ? "selected" : ""}>Pagados</option>
+              </select>
+              <button class="btn-muted" type="submit">Aplicar filtro</button>
+            </form>
+
             <div class="table-wrap">
               <table>
                 <thead>
@@ -82,7 +96,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  ${credits.map((item) => `
+                  ${credits.length ? credits.map((item) => `
                     <tr>
                       <td>${item.clientId?.name || "-"}</td>
                       <td>${item.clientId?.documentId || "-"}</td>
@@ -104,7 +118,11 @@
                         }
                       </td>
                     </tr>
-                  `).join("")}
+                  `).join("") : `
+                    <tr>
+                      <td colspan="9">No se encontraron créditos.</td>
+                    </tr>
+                  `}
                 </tbody>
               </table>
             </div>
@@ -128,11 +146,23 @@
             })
           });
 
-          alert("Crédito registrado correctamente");
-          window.location.reload();
+          showToast("Crédito registrado correctamente", "success");
+          setTimeout(() => window.location.reload(), 700);
         } catch (error) {
-          alert(error.message);
+          showToast(error.message, "error");
         }
+      });
+
+      document.getElementById("filterForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const value = document.getElementById("searchInput").value.trim();
+        const statusValue = document.getElementById("statusFilter").value;
+        const params = new URLSearchParams();
+
+        if (value) params.set("q", value);
+        if (statusValue) params.set("status", statusValue);
+
+        window.location.href = `credits.html?${params.toString()}`;
       });
     }
 
@@ -142,14 +172,14 @@
           method: "PATCH"
         });
 
-        alert("Crédito marcado como pagado");
-        window.location.reload();
+        showToast("Crédito marcado como pagado", "success");
+        setTimeout(() => window.location.reload(), 700);
       } catch (error) {
-        alert(error.message);
+        showToast(error.message, "error");
       }
     }
 
-    loadPage().catch((err) => alert(err.message));
+    loadPage().catch((err) => showToast(err.message, "error"));
   </script>
 </body>
 </html>

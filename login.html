@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login - LoanSystem</title>
-  <link rel="stylesheet" href="./assets/styles.css" />
+  <title>Sistema de Préstamos</title>
+  <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body class="login-page">
   <div class="login-card">
-    <h1>LoanSystem</h1>
-    <p>Ingresa con tus credenciales para administrar clientes, cobradores y créditos.</p>
+    <h1>Sistema de Préstamos</h1>
+    <p>Ingresa para administrar clientes, cobradores y créditos de forma simple y segura.</p>
 
     <form id="loginForm" class="login-form">
       <input type="email" id="email" placeholder="Correo electrónico" required />
@@ -18,9 +18,13 @@
     </form>
 
     <div id="message" class="message"></div>
+
+    <div style="margin-top: 18px; text-align: center;">
+      <a href="register-admin.html" class="small-link">Crear administrador</a>
+    </div>
   </div>
 
-  <script src="./assets/api.js"></script>
+  <script src="assets/api.js"></script>
   <script>
     const form = document.getElementById("loginForm");
     const message = document.getElementById("message");
@@ -42,9 +46,9 @@
         localStorage.setItem("user", JSON.stringify(data.user));
 
         if (data.user.role === "admin") {
-          window.location.href = "./admin/dashboard.html";
+          window.location.href = "admin/dashboard.html";
         } else {
-          window.location.href = "./collector/dashboard.html";
+          window.location.href = "collector/dashboard.html";
         }
       } catch (error) {
         message.textContent = error.message;

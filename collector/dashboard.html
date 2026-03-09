@@ -17,6 +17,14 @@
       const data = await apiFetch("/dashboard");
       const m = data.metrics;
 
+      const maxValue = Math.max(
+        m.myClients || 0,
+        m.myPendingCredits || 0,
+        m.myPaidCredits || 0,
+        m.myTotalCredits || 0,
+        1
+      );
+
       sidebarLayout({
         role: "collector",
         active: "dashboard",
@@ -39,6 +47,49 @@
             <div class="card">
               <h3>Total créditos</h3>
               <div class="metric">${m.myTotalCredits}</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:18px;">
+            <div class="section-header">
+              <div>
+                <strong>Resumen visual</strong>
+                <div class="small">Vista rápida de tu actividad.</div>
+              </div>
+            </div>
+
+            <div class="chart-list">
+              <div class="chart-row">
+                <div class="chart-label">Mis clientes</div>
+                <div class="chart-bar">
+                  <span style="width:${Math.max((m.myClients / maxValue) * 100, 8)}%"></span>
+                </div>
+                <div class="chart-value">${m.myClients}</div>
+              </div>
+
+              <div class="chart-row">
+                <div class="chart-label">Créditos pendientes</div>
+                <div class="chart-bar">
+                  <span style="width:${Math.max((m.myPendingCredits / maxValue) * 100, 8)}%"></span>
+                </div>
+                <div class="chart-value">${m.myPendingCredits}</div>
+              </div>
+
+              <div class="chart-row">
+                <div class="chart-label">Créditos pagados</div>
+                <div class="chart-bar">
+                  <span style="width:${Math.max((m.myPaidCredits / maxValue) * 100, 8)}%"></span>
+                </div>
+                <div class="chart-value">${m.myPaidCredits}</div>
+              </div>
+
+              <div class="chart-row">
+                <div class="chart-label">Total créditos</div>
+                <div class="chart-bar">
+                  <span style="width:${Math.max((m.myTotalCredits / maxValue) * 100, 8)}%"></span>
+                </div>
+                <div class="chart-value">${m.myTotalCredits}</div>
+              </div>
             </div>
           </div>
         `

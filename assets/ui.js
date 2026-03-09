@@ -16,9 +16,11 @@ function sidebarLayout({ role, title, subtitle, content, active }) {
   const user = JSON.parse(localStorage.getItem("user") || "null");
 
   document.body.innerHTML = `
+    <div id="toastContainer" class="toast-container"></div>
+
     <div class="page">
       <aside class="sidebar">
-        <div class="brand">Loan<span>System</span></div>
+        <div class="brand">Préstamos<span>Pro</span></div>
         <nav class="nav">
           ${links
             .map(
@@ -58,4 +60,20 @@ function money(value) {
 function formatDate(date) {
   if (!date) return "-";
   return new Date(date).toLocaleDateString("es-CO");
+}
+
+function showToast(message, type = "success") {
+  const container = document.getElementById("toastContainer") || document.body;
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add("toast-hide");
+  }, 2600);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3200);
 }
