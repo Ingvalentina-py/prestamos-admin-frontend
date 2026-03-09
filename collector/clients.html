@@ -34,10 +34,26 @@
             </div>
 
             <form id="clientForm" class="form-grid">
-              <input id="name" placeholder="Nombre completo" required />
-              <input id="documentId" placeholder="Cédula" required />
-              <input id="address" placeholder="Dirección" />
-              <input id="phone" placeholder="Celular" />
+              <div class="field-group">
+                <label class="field-label" for="name">Nombre completo</label>
+                <input id="name" placeholder="Nombre completo" required />
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="documentId">Cédula</label>
+                <input id="documentId" placeholder="Cédula" required />
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="address">Dirección</label>
+                <input id="address" placeholder="Dirección" />
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="phone">Celular</label>
+                <input id="phone" placeholder="Celular" />
+              </div>
+
               <button class="btn-primary" type="submit">Guardar cliente</button>
             </form>
           </div>
@@ -67,14 +83,14 @@
                 <tbody>
                   ${items.length ? items.map((client) => `
                     <tr>
-                      <td>${client.name}</td>
-                      <td>${client.documentId}</td>
-                      <td>${client.address || "-"}</td>
-                      <td>${client.phone || "-"}</td>
+                      <td data-label="Nombre">${client.name}</td>
+                      <td data-label="Cédula">${client.documentId}</td>
+                      <td data-label="Dirección">${client.address || "-"}</td>
+                      <td data-label="Celular">${client.phone || "-"}</td>
                     </tr>
                   `).join("") : `
                     <tr>
-                      <td colspan="4">No se encontraron clientes.</td>
+                      <td data-label="Resultado">No se encontraron clientes.</td>
                     </tr>
                   `}
                 </tbody>

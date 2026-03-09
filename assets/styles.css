@@ -15,8 +15,6 @@
   --radius: 20px;
 }
 
-/* RESET */
-
 * {
   box-sizing: border-box;
 }
@@ -35,12 +33,10 @@ body {
   padding: 0;
   width: 100%;
   font-family: Arial, Helvetica, sans-serif;
-
   background:
     radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 30%),
     radial-gradient(circle at top right, rgba(96,165,250,0.14), transparent 30%),
     linear-gradient(180deg, #07101d 0%, #0b1526 100%);
-
   color: var(--text);
   min-height: 100%;
 }
@@ -49,8 +45,6 @@ a {
   color: inherit;
   text-decoration: none;
 }
-
-/* LAYOUT */
 
 .page {
   min-height: 100vh;
@@ -106,9 +100,8 @@ a {
 
 .main {
   padding: 24px;
+  min-width: 0;
 }
-
-/* HEADER */
 
 .topbar {
   display: flex;
@@ -136,8 +129,6 @@ a {
   backdrop-filter: blur(14px);
 }
 
-/* GRID */
-
 .grid {
   display: grid;
   gap: 18px;
@@ -147,8 +138,6 @@ a {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
-/* CARD */
-
 .card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -156,6 +145,7 @@ a {
   padding: 20px;
   backdrop-filter: blur(18px);
   box-shadow: var(--shadow);
+  min-width: 0;
 }
 
 .card h3 {
@@ -170,8 +160,6 @@ a {
   font-size: 34px;
   font-weight: bold;
 }
-
-/* FORMS */
 
 .row {
   display: flex;
@@ -191,11 +179,9 @@ select,
 textarea {
   width: 100%;
   min-width: 0;
-
   background: rgba(255,255,255,0.07);
   border: 1px solid var(--border);
   color: var(--text);
-
   padding: 12px 14px;
   border-radius: 14px;
   outline: none;
@@ -235,8 +221,6 @@ button {
   border: 1px solid var(--border);
 }
 
-/* TABLE */
-
 .table-wrap {
   width: 100%;
   max-width: 100%;
@@ -255,6 +239,7 @@ td {
   padding: 14px 12px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
   text-align: left;
+  vertical-align: top;
 }
 
 th {
@@ -262,8 +247,6 @@ th {
   font-size: 14px;
   font-weight: 600;
 }
-
-/* BADGES */
 
 .badge {
   display: inline-flex;
@@ -284,15 +267,23 @@ th {
   color: #86efac;
 }
 
-/* FORMS GRID */
-
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
   gap: 14px;
 }
 
-/* LOGIN */
+.field-group {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.field-label {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
 
 .login-page {
   min-height: 100vh;
@@ -333,8 +324,6 @@ th {
   color: #ffd27a;
 }
 
-/* HEADERS */
-
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -356,16 +345,12 @@ th {
   text-decoration: underline;
 }
 
-/* TOOLBAR */
-
 .toolbar {
   display: grid;
   grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
-
-/* CHART */
 
 .chart-list {
   display: grid;
@@ -402,8 +387,6 @@ th {
   text-align: right;
   font-weight: bold;
 }
-
-/* TOAST */
 
 .toast-container {
   position: fixed;
@@ -450,10 +433,7 @@ th {
   }
 }
 
-/* RESPONSIVE */
-
 @media (max-width: 900px) {
-
   .page {
     grid-template-columns: 1fr;
   }
@@ -474,11 +454,9 @@ th {
     flex-direction: column;
     align-items: flex-start;
   }
-
 }
 
 @media (max-width: 768px) {
-
   .form-grid {
     grid-template-columns: 1fr;
   }
@@ -517,8 +495,9 @@ th {
     align-items: flex-start;
   }
 
-  table {
-    min-width: 560px;
+  .nav a,
+  .nav button {
+    width: 100%;
   }
 
   .toast-container {
@@ -532,9 +511,56 @@ th {
     max-width: 100%;
   }
 
-  .nav a,
-  .nav button {
+  /* Tablas como tarjetas en móvil */
+  .table-wrap {
+    overflow: visible;
+  }
+
+  table,
+  thead,
+  tbody,
+  th,
+  td,
+  tr {
+    display: block;
     width: 100%;
   }
 
+  table {
+    min-width: 0;
+    border-collapse: separate;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody {
+    display: grid;
+    gap: 14px;
+  }
+
+  tr {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 8px 10px;
+  }
+
+  td {
+    border-bottom: none;
+    padding: 10px 6px;
+    text-align: left;
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 10px;
+    align-items: start;
+  }
+
+  td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
 }

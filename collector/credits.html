@@ -40,14 +40,34 @@
             </div>
 
             <form id="creditForm" class="form-grid">
-              <select id="clientId" required>
-                <option value="">Selecciona cliente</option>
-                ${clients.map((c) => `<option value="${c._id}">${c.name} · ${c.documentId}</option>`).join("")}
-              </select>
-              <input type="date" id="originDate" required />
-              <input type="date" id="dueDate" required />
-              <input type="number" id="principalAmount" placeholder="Monto prestado" required />
-              <input type="number" id="totalToPay" placeholder="Monto total a pagar" required />
+              <div class="field-group">
+                <label class="field-label" for="clientId">Cliente</label>
+                <select id="clientId" required>
+                  <option value="">Selecciona cliente</option>
+                  ${clients.map((c) => `<option value="${c._id}">${c.name} · ${c.documentId}</option>`).join("")}
+                </select>
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="originDate">Fecha de inicio del crédito</label>
+                <input type="date" id="originDate" required />
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="dueDate">Fecha límite de pago</label>
+                <input type="date" id="dueDate" required />
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="principalAmount">Monto prestado</label>
+                <input type="number" id="principalAmount" placeholder="Monto prestado" required />
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="totalToPay">Monto total a pagar</label>
+                <input type="number" id="totalToPay" placeholder="Monto total a pagar" required />
+              </div>
+
               <button class="btn-primary" type="submit">Guardar crédito</button>
             </form>
           </div>
@@ -86,18 +106,18 @@
                 <tbody>
                   ${credits.length ? credits.map((item) => `
                     <tr>
-                      <td>${item.clientId?.name || "-"}</td>
-                      <td>${item.clientId?.documentId || "-"}</td>
-                      <td>${money(item.principalAmount)}</td>
-                      <td>${money(item.totalToPay)}</td>
-                      <td>${formatDate(item.originDate)}</td>
-                      <td>${formatDate(item.dueDate)}</td>
-                      <td>
+                      <td data-label="Cliente">${item.clientId?.name || "-"}</td>
+                      <td data-label="Cédula">${item.clientId?.documentId || "-"}</td>
+                      <td data-label="Prestado">${money(item.principalAmount)}</td>
+                      <td data-label="Total a pagar">${money(item.totalToPay)}</td>
+                      <td data-label="Inicio">${formatDate(item.originDate)}</td>
+                      <td data-label="Pago">${formatDate(item.dueDate)}</td>
+                      <td data-label="Estado">
                         <span class="badge ${item.status}">
                           ${item.status === "paid" ? "Pagado" : "Pendiente"}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Acción">
                         ${
                           item.status === "pending"
                             ? `<button class="btn-success" onclick="markAsPaid('${item._id}')">Marcar pagado</button>`
@@ -107,7 +127,7 @@
                     </tr>
                   `).join("") : `
                     <tr>
-                      <td colspan="8">No se encontraron créditos.</td>
+                      <td data-label="Resultado">No se encontraron créditos.</td>
                     </tr>
                   `}
                 </tbody>
