@@ -9,9 +9,16 @@
 <body class="login-page">
   <div class="login-card">
     <h1>Sistema de Préstamos</h1>
-    <p>Ingresa para administrar clientes, cobradores y créditos de forma simple y segura.</p>
+    <p>Selecciona tu oficina e ingresa para administrar clientes, cobradores y créditos.</p>
 
     <form id="loginForm" class="login-form">
+      <div class="field-group">
+        <label class="field-label" for="officeId">Oficina</label>
+        <select id="officeId" required>
+          <option value="">Selecciona una oficina</option>
+        </select>
+      </div>
+
       <input type="email" id="email" placeholder="Correo electrónico" required />
       <input type="password" id="password" placeholder="Contraseña" required />
       <button type="submit" class="btn-primary">Iniciar sesión</button>
@@ -20,7 +27,7 @@
     <div id="message" class="message"></div>
 
     <div style="margin-top: 18px; text-align: center;">
-      <a href="register-admin.html" class="small-link">Crear administrador</a>
+      <a href="register-admin.html" class="small-link">Crear oficina y administrador</a>
     </div>
   </div>
 
@@ -28,18 +35,34 @@
   <script>
     const form = document.getElementById("loginForm");
     const message = document.getElementById("message");
+    const officeSelect = document.getElementById("officeId");
+
+    async function loadOffices() {
+      try {
+        const data = await apiFetch("/offices/public");
+        const items = data.items || [];
+
+        officeSelect.innerHTML = `
+          <option value="">Selecciona una oficina</option>
+          ${items.map(item => `<option value="${item._id}">${item.name}</option>`).join("")}
+        `;
+      } catch (error) {
+        message.textContent = error.message;
+      }
+    }
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       message.textContent = "";
 
       try {
+        const officeId = document.getElementById("officeId").value;
         const email = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value.trim();
 
         const data = await apiFetch("/auth/login", {
           method: "POST",
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ officeId, email, password })
         });
 
         localStorage.setItem("token", data.token);
@@ -54,6 +77,8 @@
         message.textContent = error.message;
       }
     });
+
+    loadOffices();
   </script>
 </body>
 </html>

@@ -39,7 +39,8 @@ function sidebarLayout({ role, title, subtitle, content, active }) {
             <p>${subtitle}</p>
           </div>
           <div class="user-badge">
-            ${user?.name || "Usuario"} · ${user?.role || ""}
+            ${user?.name || "Usuario"} · ${user?.role || ""}<br>
+            <span style="font-size:12px;color:#9fb4d1;">${user?.officeName || ""}</span>
           </div>
         </div>
 
