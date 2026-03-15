@@ -6,12 +6,19 @@
   <title>Sistema de Préstamos</title>
   <link rel="stylesheet" href="assets/styles.css" />
 </head>
+
 <body class="login-page">
+
   <div class="login-card">
-    <h1>Sistema de Préstamos</h1>
-    <p>Selecciona tu oficina e ingresa para administrar clientes, cobradores y créditos.</p>
+
+    <h1 id="loginTitle">Sistema de Préstamos</h1>
+
+    <p id="loginSubtitle">
+      Selecciona tu oficina e ingresa al sistema.
+    </p>
 
     <form id="loginForm" class="login-form">
+
       <div class="field-group">
         <label class="field-label" for="officeId">Oficina</label>
         <select id="officeId" required>
@@ -19,50 +26,108 @@
         </select>
       </div>
 
-      <input type="email" id="email" placeholder="Correo electrónico" required />
-      <input type="password" id="password" placeholder="Contraseña" required />
-      <button type="submit" class="btn-primary">Iniciar sesión</button>
+      <input
+        type="email"
+        id="email"
+        placeholder="Correo electrónico"
+        required
+      />
+
+      <input
+        type="password"
+        id="password"
+        placeholder="Contraseña"
+        required
+      />
+
+      <button type="submit" class="btn-primary">
+        Iniciar sesión
+      </button>
+
     </form>
 
     <div id="message" class="message"></div>
 
-    <div style="margin-top: 18px; text-align: center;">
-      <a href="register-admin.html" class="small-link">Crear oficina y administrador</a>
+    <div style="margin-top:18px;text-align:center;">
+      <a href="register-admin.html" class="small-link">
+        Crear oficina y administrador
+      </a>
     </div>
+
   </div>
 
   <script src="assets/api.js"></script>
+
   <script>
+
+    const params = new URLSearchParams(window.location.search);
+    const roleParam = params.get("role");
+
+    const title = document.getElementById("loginTitle");
+    const subtitle = document.getElementById("loginSubtitle");
+
+    if (roleParam === "admin") {
+      title.textContent = "Acceso Administrador";
+      subtitle.textContent =
+        "Ingresa para gestionar oficinas, cobradores, clientes y créditos.";
+    }
+
+    if (roleParam === "collector") {
+      title.textContent = "Acceso Cobrador";
+      subtitle.textContent =
+        "Ingresa para gestionar tus clientes, créditos y pagos.";
+    }
+
     const form = document.getElementById("loginForm");
     const message = document.getElementById("message");
     const officeSelect = document.getElementById("officeId");
 
     async function loadOffices() {
+
       try {
+
         const data = await apiFetch("/offices/public");
+
         const items = data.items || [];
 
         officeSelect.innerHTML = `
           <option value="">Selecciona una oficina</option>
-          ${items.map(item => `<option value="${item._id}">${item.name}</option>`).join("")}
+          ${items.map(o => `
+            <option value="${o._id}">
+              ${o.name}
+            </option>
+          `).join("")}
         `;
+
       } catch (error) {
+
         message.textContent = error.message;
+
       }
+
     }
 
     form.addEventListener("submit", async (e) => {
+
       e.preventDefault();
+
       message.textContent = "";
 
       try {
+
         const officeId = document.getElementById("officeId").value;
+
         const email = document.getElementById("email").value.trim();
+
         const password = document.getElementById("password").value.trim();
 
         const data = await apiFetch("/auth/login", {
           method: "POST",
-          body: JSON.stringify({ officeId, email, password })
+          body: JSON.stringify({
+            officeId,
+            email,
+            password
+          })
         });
 
         localStorage.setItem("token", data.token);
@@ -73,12 +138,18 @@
         } else {
           window.location.href = "collector/dashboard.html";
         }
+
       } catch (error) {
+
         message.textContent = error.message;
+
       }
+
     });
 
     loadOffices();
+
   </script>
+
 </body>
 </html>
