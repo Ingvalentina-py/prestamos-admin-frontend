@@ -19,11 +19,7 @@ function requireRole(expectedRole) {
   if (!user) return null;
 
   if (user.role !== expectedRole) {
-    if (user.role === "admin") {
-      window.location.href = "../admin/dashboard.html";
-    } else {
-      window.location.href = "../collector/dashboard.html";
-    }
+    window.location.href = "../login.html";
     return null;
   }
 

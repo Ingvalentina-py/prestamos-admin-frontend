@@ -1,17 +1,10 @@
 function sidebarLayout({ role, title, subtitle, content, active }) {
-  const links =
-    role === "admin"
-      ? [
-          { href: "dashboard.html", label: "Dashboard", key: "dashboard" },
-          { href: "collectors.html", label: "Cobradores", key: "collectors" },
-          { href: "clients.html", label: "Clientes", key: "clients" },
-          { href: "credits.html", label: "Créditos", key: "credits" },
-        ]
-      : [
-          { href: "dashboard.html", label: "Dashboard", key: "dashboard" },
-          { href: "clients.html", label: "Clientes", key: "clients" },
-          { href: "credits.html", label: "Créditos", key: "credits" },
-        ];
+  const links = [
+    { href: "dashboard.html", label: "Dashboard", key: "dashboard" },
+    { href: "collectors.html", label: "Cobradores", key: "collectors" },
+    { href: "clients.html", label: "Clientes", key: "clients" },
+    { href: "credits.html", label: "Créditos", key: "credits" },
+  ];
 
   const user = JSON.parse(localStorage.getItem("user") || "null");
 
