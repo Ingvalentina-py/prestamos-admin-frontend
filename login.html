@@ -1,85 +1,70 @@
 <!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Acceso Administrador</title>
-  <link rel="stylesheet" href="assets/styles.css" />
-</head>
-<body class="login-page">
-  <div class="login-card">
-    <h1>Acceso Administrador</h1>
-    <p>Selecciona tu oficina e ingresa para gestionar cobradores, clientes y créditos.</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Acceso Administrador</title>
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body class="login-page">
+    <div class="login-card">
+      <h1>Acceso Administrador</h1>
+      <p>
+        Ingresa para gestionar cobradores, clientes y créditos de tu oficina.
+      </p>
 
-    <form id="loginForm" class="login-form">
-      <div class="field-group">
-        <label class="field-label" for="officeId">Oficina</label>
-        <select id="officeId" required>
-          <option value="">Selecciona una oficina</option>
-        </select>
-      </div>
+      <form id="loginForm" class="login-form">
+        <input
+          type="email"
+          id="email"
+          placeholder="Correo electrónico"
+          required
+        />
+        <input
+          type="password"
+          id="password"
+          placeholder="Contraseña"
+          required
+        />
+        <button type="submit" class="btn-primary">
+          Ingresar como administrador
+        </button>
+      </form>
 
-      <input type="email" id="email" placeholder="Correo electrónico" required />
-      <input type="password" id="password" placeholder="Contraseña" required />
-      <button type="submit" class="btn-primary">Ingresar como administrador</button>
-    </form>
-
-    <div id="message" class="message"></div>
-
-    <div style="margin-top: 18px; text-align: center;">
-      <a href="register-admin.html" class="small-link">Crear oficina y administrador</a>
+      <div id="message" class="message"></div>
     </div>
-  </div>
 
-  <script src="assets/api.js"></script>
-  <script>
-    const form = document.getElementById("loginForm");
-    const message = document.getElementById("message");
-    const officeSelect = document.getElementById("officeId");
+    <script src="assets/api.js"></script>
+    <script>
+      const form = document.getElementById("loginForm");
+      const message = document.getElementById("message");
 
-    async function loadOffices() {
-      try {
-        const data = await apiFetch("/offices/public");
-        const items = data.items || [];
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        message.textContent = "";
 
-        officeSelect.innerHTML = `
-          <option value="">Selecciona una oficina</option>
-          ${items.map(item => `<option value="${item._id}">${item.name}</option>`).join("")}
-        `;
-      } catch (error) {
-        message.textContent = error.message;
-      }
-    }
+        try {
+          const email = document.getElementById("email").value.trim();
+          const password = document.getElementById("password").value.trim();
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      message.textContent = "";
+          const data = await apiFetch("/auth/login", {
+            method: "POST",
+            body: JSON.stringify({ email, password }),
+          });
 
-      try {
-        const officeId = document.getElementById("officeId").value;
-        const email = document.getElementById("email").value.trim();
-        const password = document.getElementById("password").value.trim();
+          if (data.user.role !== "admin") {
+            message.textContent = "Este acceso es solo para administradores.";
+            return;
+          }
 
-        const data = await apiFetch("/auth/login", {
-          method: "POST",
-          body: JSON.stringify({ officeId, email, password })
-        });
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data.user));
 
-        if (data.user.role !== "admin") {
-          message.textContent = "Este acceso es solo para administradores.";
-          return;
+          window.location.href = "admin/dashboard.html";
+        } catch (error) {
+          message.textContent = error.message;
         }
-
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        window.location.href = "admin/dashboard.html";
-      } catch (error) {
-        message.textContent = error.message;
-      }
-    });
-
-    loadOffices();
-  </script>
-</body>
+      });
+    </script>
+  </body>
 </html>
