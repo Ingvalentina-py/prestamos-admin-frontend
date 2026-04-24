@@ -25,8 +25,44 @@
         role: "admin",
         active: "collectors",
         title: "Gestión de cobradores",
-        subtitle: "Crea, consulta y habilita o deshabilita cobradores.",
+        subtitle: "Crea, consulta y habilita o deshabilita cobradores. También puedes vincular tu Telegram.",
         content: `
+          <div class="card" style="margin-bottom:18px;">
+            <div class="section-header">
+              <div>
+                <strong>Vincular Telegram</strong>
+                <div class="small">
+                  Genera un código temporal y envíalo al bot de Telegram para vincular tu cuenta.
+                </div>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="field-group">
+                <label class="field-label">Bot de Telegram</label>
+                <input value="Loans System Bot" readonly />
+              </div>
+
+              <div class="field-group">
+                <label class="field-label">Código generado</label>
+                <input id="telegramCode" placeholder="Aún no has generado código" readonly />
+              </div>
+
+              <div class="field-group">
+                <label class="field-label">Vencimiento</label>
+                <input id="telegramCodeExpires" placeholder="-" readonly />
+              </div>
+
+              <button id="generateTelegramCodeBtn" class="btn-primary" type="button">
+                Generar código
+              </button>
+            </div>
+
+            <div class="small" style="margin-top:12px;">
+              Después de generar el código, abre Telegram, entra al bot y envía el código exactamente como aparece.
+            </div>
+          </div>
+
           <div class="card" style="margin-bottom:18px;">
             <div class="section-header">
               <div>
@@ -103,6 +139,8 @@
         `
       });
 
+      document.getElementById("generateTelegramCodeBtn").addEventListener("click", generateTelegramCode);
+
       document.getElementById("collectorForm").addEventListener("submit", async (e) => {
         e.preventDefault();
 
@@ -123,6 +161,33 @@
           showToast(error.message, "error");
         }
       });
+    }
+
+    async function generateTelegramCode() {
+      const btn = document.getElementById("generateTelegramCodeBtn");
+      const codeInput = document.getElementById("telegramCode");
+      const expiresInput = document.getElementById("telegramCodeExpires");
+
+      btn.disabled = true;
+      btn.textContent = "Generando...";
+
+      try {
+        const data = await apiFetch("/telegram/link-code", {
+          method: "POST"
+        });
+
+        codeInput.value = data.code;
+        expiresInput.value = data.expiresAt
+          ? new Date(data.expiresAt).toLocaleString("es-CO")
+          : "-";
+
+        showToast("Código generado correctamente", "success");
+      } catch (error) {
+        showToast(error.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Generar código";
+      }
     }
 
     async function toggleCollector(id, isActive) {
