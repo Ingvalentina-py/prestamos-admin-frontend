@@ -26,6 +26,13 @@ function requireRole(expectedRole) {
   return user;
 }
 
+function requireAdminWithOffice() {
+  const user = requireRole("admin");
+  if (!user) return null;
+  if (!user.officeId) return null;
+  return user;
+}
+
 function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("user");

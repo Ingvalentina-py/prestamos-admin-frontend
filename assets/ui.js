@@ -1,4 +1,6 @@
 function sidebarLayout({ role, title, subtitle, content, active }) {
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+
   const links = [
     { href: "dashboard.html", label: "Dashboard", key: "dashboard" },
     { href: "collectors.html", label: "Cobradores", key: "collectors" },
@@ -6,7 +8,13 @@ function sidebarLayout({ role, title, subtitle, content, active }) {
     { href: "credits.html", label: "Créditos", key: "credits" },
   ];
 
-  const user = JSON.parse(localStorage.getItem("user") || "null");
+  if (user?.role === "admin" && user?.officeId) {
+    links.push({
+      href: "rag-documentation.html",
+      label: "Documentación RAG",
+      key: "rag",
+    });
+  }
 
   document.body.innerHTML = `
     <div id="toastContainer" class="toast-container"></div>

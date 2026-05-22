@@ -8,9 +8,23 @@ function getToken() {
   return localStorage.getItem("token");
 }
 
+function formatApiError(data, fallback) {
+  const message = data?.message || fallback;
+  if (data?.detail) {
+    const detail =
+      typeof data.detail === "string"
+        ? data.detail
+        : JSON.stringify(data.detail);
+    return `${message} (${detail})`;
+  }
+  return message;
+}
+
 async function apiFetch(path, options = {}) {
-  const headers = options.headers || {};
-  headers["Content-Type"] = "application/json";
+  const headers = { ...(options.headers || {}) };
+  if (!options.skipJsonContentType) {
+    headers["Content-Type"] = "application/json";
+  }
 
   const token = getToken();
   if (token) {
@@ -28,7 +42,10 @@ async function apiFetch(path, options = {}) {
   } catch (error) {}
 
   if (!response.ok) {
-    throw new Error(data?.message || "Error en la solicitud");
+    const err = new Error(formatApiError(data, "Error en la solicitud"));
+    err.status = response.status;
+    err.data = data;
+    throw err;
   }
 
   return data;

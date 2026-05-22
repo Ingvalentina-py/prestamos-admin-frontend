@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Documentación RAG</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <script src="../assets/auth.js"></script>
+  <script src="../assets/api.js"></script>
+  <script src="../assets/rag-api.js"></script>
+  <script src="../assets/ui.js"></script>
+  <script>
+    const adminUser = requireRole("admin");
+    if (!adminUser) {
+      throw new Error("redirect");
+    }
+
+    const hasOffice = Boolean(adminUser.officeId);
+
+    const state = {
+      step: "upload",
+      prepareResult: null,
+      confirmResult: null,
+      inputMode: "file",
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function stepLabels() {
+      const steps = [
+        { key: "upload", label: "1. Cargar" },
+        { key: "review", label: "2. Revisar" },
+        { key: "done", label: "3. Publicado" },
+      ];
+      const activeKey =
+        state.step === "preparing"
+          ? "upload"
+          : state.step === "publishing"
+            ? "review"
+            : state.step;
+      return steps
+        .map(
+          (s) =>
+            `<span class="${activeKey === s.key ? "active" : ""}">${s.label}</span>`,
+        )
+        .join("");
+    }
+
+    function mapPrepareChunks(chunks) {
+      return (chunks || []).map((chunk) => ({
+        chunk_id: chunk.chunk_id,
+        section: chunk.section || "",
+        semantic_summary: chunk.semantic_summary || "",
+        keywords: Array.isArray(chunk.keywords) ? [...chunk.keywords] : [],
+        content: chunk.content || "",
+        embeddingText:
+          chunk.suggested_embedding_text || chunk.content || "",
+      }));
+    }
+
+    function renderNoOffice() {
+      return `
+        <div class="card">
+          <div class="section-header">
+            <div>
+              <strong>Sin oficina asociada</strong>
+              <div class="small" style="margin-top:8px;">
+                No tienes una oficina asociada para gestionar documentación RAG.
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderUpload() {
+      return `
+        <div class="rag-step-indicator">${stepLabels()}</div>
+        <div class="card">
+          <div class="section-header">
+            <div>
+              <strong>Cargar documentación</strong>
+              <div class="small" style="margin-top:8px;">
+                Sube un archivo o pega texto. El sistema generará fragmentos para revisar antes de publicar.
+              </div>
+            </div>
+          </div>
+
+          <div class="rag-input-tabs">
+            <label>
+              <input type="radio" name="inputMode" value="file" ${state.inputMode === "file" ? "checked" : ""} />
+              Subir archivo
+            </label>
+            <label>
+              <input type="radio" name="inputMode" value="text" ${state.inputMode === "text" ? "checked" : ""} />
+              Pegar texto
+            </label>
+          </div>
+
+          <div id="panelFile" class="rag-panel ${state.inputMode === "file" ? "active" : ""}">
+            <div class="form-grid">
+              <div class="field-group">
+                <label class="field-label" for="ragFile">Archivo (PDF, DOCX, TXT)</label>
+                <input id="ragFile" type="file" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" />
+                <div class="field-hint">Máximo 10 MB. No combines archivo y texto.</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="panelText" class="rag-panel ${state.inputMode === "text" ? "active" : ""}">
+            <div class="form-grid">
+              <div class="field-group">
+                <label class="field-label" for="ragFilename">Nombre lógico del archivo</label>
+                <input id="ragFilename" type="text" placeholder="politica-interna.txt" value="inline.txt" />
+              </div>
+              <div class="field-group" style="grid-column: 1 / -1;">
+                <label class="field-label" for="ragText">Contenido</label>
+                <textarea id="ragText" rows="10" placeholder="Pega aquí el manual, política o procedimiento..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-group" style="margin-top:12px;">
+            <label class="field-label" for="ragLanguage">Idioma</label>
+            <input id="ragLanguage" type="text" value="es" />
+          </div>
+
+          <div class="rag-actions">
+            <button id="prepareBtn" class="btn-primary" type="button">Preparar documento</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPreparing() {
+      return `
+        <div class="rag-step-indicator">${stepLabels()}</div>
+        <div class="card rag-loading">
+          <strong>Preparando documento...</strong>
+          <p>El sistema está analizando el contenido y generando fragmentos. Esto puede tardar un momento.</p>
+        </div>
+      `;
+    }
+
+    function renderChunkCard(chunk, index) {
+      const keywordsStr = (chunk.keywords || []).join(", ");
+      return `
+        <div class="chunk-card" data-chunk-index="${index}">
+          <div class="chunk-card-header">
+            <strong>Fragmento ${index + 1}</strong>
+            <button type="button" class="btn-muted btn-remove-chunk" data-index="${index}">Eliminar</button>
+          </div>
+
+          <div class="form-grid">
+            <div class="field-group">
+              <label class="field-label">Sección</label>
+              <input class="chunk-section" data-index="${index}" value="${escapeHtml(chunk.section)}" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Palabras clave (separadas por coma)</label>
+              <input class="chunk-keywords" data-index="${index}" value="${escapeHtml(keywordsStr)}" />
+            </div>
+            <div class="field-group" style="grid-column: 1 / -1;">
+              <label class="field-label">Texto para embedding</label>
+              <textarea class="chunk-embedding" data-index="${index}" rows="3">${escapeHtml(chunk.embeddingText)}</textarea>
+            </div>
+          </div>
+
+          ${chunk.semantic_summary ? `<div class="chunk-readonly"><strong>Resumen:</strong> ${escapeHtml(chunk.semantic_summary)}</div>` : ""}
+          ${chunk.content ? `<div class="chunk-readonly"><strong>Contenido:</strong> ${escapeHtml(chunk.content)}</div>` : ""}
+        </div>
+      `;
+    }
+
+    function renderReview() {
+      const pr = state.prepareResult;
+      const chunks = pr.chunks || [];
+
+      return `
+        <div class="rag-step-indicator">${stepLabels()}</div>
+        <div class="card" style="margin-bottom:18px;">
+          <div class="section-header">
+            <div>
+              <strong>${escapeHtml(pr.document_title)}</strong>
+              <div class="small" style="margin-top:8px;">${escapeHtml(pr.filename)} · ${chunks.length} fragmento(s)</div>
+            </div>
+          </div>
+          <div class="chunk-readonly" style="margin-top:0;">
+            <strong>Resumen del documento</strong><br />
+            ${escapeHtml(pr.document_summary)}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-header">
+            <div>
+              <strong>Revisar y editar fragmentos</strong>
+              <div class="small" style="margin-top:8px;">
+                Ajusta el texto que se embeberá. Puedes eliminar fragmentos que no quieras publicar.
+              </div>
+            </div>
+          </div>
+
+          <div id="chunkList" class="chunk-list">
+            ${chunks.map((c, i) => renderChunkCard(c, i)).join("")}
+          </div>
+
+          <div class="rag-actions">
+            <button id="backBtn" class="btn-muted" type="button">Volver</button>
+            <button id="publishBtn" class="btn-primary" type="button">Publicar documentación</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPublishing() {
+      return `
+        <div class="rag-step-indicator">${stepLabels()}</div>
+        <div class="card rag-loading">
+          <strong>Publicando documentación...</strong>
+          <p>Generando embeddings y guardando en la base de tu oficina.</p>
+        </div>
+      `;
+    }
+
+    function renderDone() {
+      const cr = state.confirmResult;
+      return `
+        <div class="rag-step-indicator">${stepLabels()}</div>
+        <div class="card">
+          <div class="section-header">
+            <div>
+              <strong>Documentación publicada</strong>
+              <div class="small" style="margin-top:8px;">
+                El bot de Telegram de tu oficina ya puede usar estos fragmentos.
+              </div>
+            </div>
+          </div>
+
+          <div class="rag-success-metrics">
+            <div class="metric">
+              <span>Fragmentos guardados</span>
+              <strong>${cr.total_chunks}</strong>
+            </div>
+            <div class="metric">
+              <span>Modelo</span>
+              <strong style="font-size:13px;">${escapeHtml(cr.embedding_model || "-")}</strong>
+            </div>
+            <div class="metric">
+              <span>Dimensiones</span>
+              <strong>${cr.dimensions ?? "-"}</strong>
+            </div>
+          </div>
+
+          <div class="rag-actions">
+            <button id="newDocBtn" class="btn-primary" type="button">Cargar otro documento</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderWizardContent() {
+      if (!hasOffice) return renderNoOffice();
+
+      switch (state.step) {
+        case "upload":
+          return renderUpload();
+        case "preparing":
+          return renderPreparing();
+        case "review":
+          return renderReview();
+        case "publishing":
+          return renderPublishing();
+        case "done":
+          return renderDone();
+        default:
+          return renderUpload();
+      }
+    }
+
+    function syncChunksFromDom() {
+      if (!state.prepareResult) return;
+      const chunks = state.prepareResult.chunks;
+
+      document.querySelectorAll(".chunk-section").forEach((el) => {
+        const i = Number(el.dataset.index);
+        if (chunks[i]) chunks[i].section = el.value;
+      });
+
+      document.querySelectorAll(".chunk-keywords").forEach((el) => {
+        const i = Number(el.dataset.index);
+        if (chunks[i]) {
+          chunks[i].keywords = el.value
+            .split(",")
+            .map((k) => k.trim())
+            .filter(Boolean);
+        }
+      });
+
+      document.querySelectorAll(".chunk-embedding").forEach((el) => {
+        const i = Number(el.dataset.index);
+        if (chunks[i]) chunks[i].embeddingText = el.value;
+      });
+    }
+
+    function handleRagError(error) {
+      if (error.status === 401) {
+        showToast("Sesión expirada. Inicia sesión de nuevo.", "error");
+        setTimeout(() => {
+          window.location.href = "../login.html";
+        }, 1200);
+        return;
+      }
+
+      let message = error.message || "Error en la solicitud";
+
+      if (error.status === 413) {
+        message = "El archivo supera el límite de 10 MB.";
+      } else if (error.status === 422) {
+        message = error.message || "No se pudo extraer texto del documento.";
+      } else if (error.status === 502) {
+        message = "Error del servicio de chunking. Intenta más tarde.";
+      } else if (error.status === 503) {
+        message = "El servicio RAG no está configurado. Contacta a soporte.";
+      } else if (error.status === 403) {
+        message =
+          error.message ||
+          "No tienes permiso para gestionar documentación RAG.";
+      }
+
+      showToast(message, "error");
+
+      if (state.step === "preparing") {
+        state.step = "upload";
+        renderWizard();
+      } else if (state.step === "publishing") {
+        state.step = "review";
+        renderWizard();
+      }
+    }
+
+    function bindUploadEvents() {
+      document.querySelectorAll('input[name="inputMode"]').forEach((radio) => {
+        radio.addEventListener("change", (e) => {
+          state.inputMode = e.target.value;
+          document.getElementById("panelFile").classList.toggle(
+            "active",
+            state.inputMode === "file",
+          );
+          document.getElementById("panelText").classList.toggle(
+            "active",
+            state.inputMode === "text",
+          );
+        });
+      });
+
+      document.getElementById("prepareBtn")?.addEventListener("click", async () => {
+        const language =
+          document.getElementById("ragLanguage")?.value.trim() || "es";
+
+        try {
+          if (state.inputMode === "file") {
+            const fileInput = document.getElementById("ragFile");
+            const file = fileInput?.files?.[0];
+            if (!file) {
+              showToast("Selecciona un archivo.", "error");
+              return;
+            }
+            const textArea = document.getElementById("ragText");
+            if (textArea?.value.trim()) {
+              showToast("No envíes archivo y texto a la vez.", "error");
+              return;
+            }
+
+            state.step = "preparing";
+            renderWizard();
+
+            const data = await ragPrepareWithFile(file, language);
+            state.prepareResult = {
+              document_id: data.document_id,
+              filename: data.filename,
+              document_title: data.document_title,
+              document_summary: data.document_summary,
+              chunks: mapPrepareChunks(data.chunks),
+            };
+            state.step = "review";
+            renderWizard();
+            return;
+          }
+
+          const text = document.getElementById("ragText")?.value || "";
+          const filename =
+            document.getElementById("ragFilename")?.value.trim() ||
+            "inline.txt";
+          const fileInput = document.getElementById("ragFile");
+          if (fileInput?.files?.length) {
+            showToast("No envíes archivo y texto a la vez.", "error");
+            return;
+          }
+
+          state.step = "preparing";
+          renderWizard();
+
+          const data = await ragPrepareWithText({ text, language, filename });
+          state.prepareResult = {
+            document_id: data.document_id,
+            filename: data.filename,
+            document_title: data.document_title,
+            document_summary: data.document_summary,
+            chunks: mapPrepareChunks(data.chunks),
+          };
+          state.step = "review";
+          renderWizard();
+        } catch (error) {
+          handleRagError(error);
+        }
+      });
+    }
+
+    function validateChunksForConfirm(chunks) {
+      if (!chunks.length) {
+        throw new Error("Debe quedar al menos un fragmento para publicar.");
+      }
+
+      const ids = new Set();
+      for (const chunk of chunks) {
+        if (!chunk.chunk_id) {
+          throw new Error("Hay fragmentos sin identificador.");
+        }
+        if (ids.has(chunk.chunk_id)) {
+          throw new Error("Hay identificadores de fragmento duplicados.");
+        }
+        ids.add(chunk.chunk_id);
+
+        if (!chunk.embeddingText || !chunk.embeddingText.trim()) {
+          throw new Error("Todos los fragmentos deben tener texto para embedding.");
+        }
+      }
+    }
+
+    function bindReviewEvents() {
+      document.getElementById("backBtn")?.addEventListener("click", () => {
+        if (
+          !confirm(
+            "¿Descartar la revisión actual y volver a cargar otro documento?",
+          )
+        ) {
+          return;
+        }
+        state.prepareResult = null;
+        state.confirmResult = null;
+        state.step = "upload";
+        renderWizard();
+      });
+
+      document.querySelectorAll(".btn-remove-chunk").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          syncChunksFromDom();
+          const index = Number(btn.dataset.index);
+          const chunks = state.prepareResult.chunks;
+          if (chunks.length <= 1) {
+            showToast("Debe quedar al menos un fragmento.", "error");
+            return;
+          }
+          chunks.splice(index, 1);
+          renderWizard();
+        });
+      });
+
+      document.getElementById("publishBtn")?.addEventListener("click", async () => {
+        syncChunksFromDom();
+        const pr = state.prepareResult;
+        const chunks = pr.chunks;
+
+        try {
+          validateChunksForConfirm(chunks);
+        } catch (error) {
+          showToast(error.message, "error");
+          return;
+        }
+
+        const publishBtn = document.getElementById("publishBtn");
+        publishBtn.disabled = true;
+        publishBtn.textContent = "Publicando...";
+        state.step = "publishing";
+        renderWizard();
+
+        try {
+          const body = {
+            source: pr.filename,
+            chunks: chunks.map((c) => ({
+              chunk_id: c.chunk_id,
+              text: c.embeddingText.trim(),
+              metadata: {
+                section: c.section || undefined,
+                keywords: c.keywords?.length ? c.keywords : undefined,
+              },
+            })),
+            document_meta: {
+              filename: pr.filename,
+              document_title: pr.document_title,
+              document_summary: pr.document_summary,
+            },
+          };
+
+          const data = await ragConfirmEmbeddings(pr.document_id, body);
+          state.confirmResult = data;
+          state.step = "done";
+          renderWizard();
+          showToast(
+            `Documentación publicada (${data.total_chunks} fragmentos).`,
+            "success",
+          );
+        } catch (error) {
+          handleRagError(error);
+        }
+      });
+    }
+
+    function bindDoneEvents() {
+      document.getElementById("newDocBtn")?.addEventListener("click", () => {
+        state.prepareResult = null;
+        state.confirmResult = null;
+        state.step = "upload";
+        renderWizard();
+      });
+    }
+
+    function bindWizardEvents() {
+      if (!hasOffice) return;
+
+      if (state.step === "upload") bindUploadEvents();
+      if (state.step === "review") bindReviewEvents();
+      if (state.step === "done") bindDoneEvents();
+    }
+
+    function renderWizard() {
+      const container = document.getElementById("ragWizard");
+      if (container) {
+        container.innerHTML = renderWizardContent();
+        bindWizardEvents();
+        return;
+      }
+
+      sidebarLayout({
+        role: "admin",
+        active: "rag",
+        title: "Documentación RAG",
+        subtitle: hasOffice
+          ? "Carga manuales y políticas para el bot de tu oficina."
+          : "Gestión de corpus por oficina.",
+        content: `<div id="ragWizard">${renderWizardContent()}</div>`,
+      });
+
+      bindWizardEvents();
+    }
+
+    renderWizard();
+  </script>
+</body>
+</html>
